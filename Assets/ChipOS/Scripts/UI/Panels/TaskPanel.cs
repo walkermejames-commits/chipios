@@ -3,7 +3,7 @@ using ChipOS.Core;
 using TMPro;
 using UnityEngine;
 
-namespace ChipOS.Panels
+namespace ChipOS.UI.Panels
 {
     public class TaskPanel : HUDPanel
     {

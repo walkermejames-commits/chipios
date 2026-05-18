@@ -2,7 +2,7 @@ using ChipOS.Core;
 using TMPro;
 using UnityEngine;
 
-namespace ChipOS.Panels
+namespace ChipOS.UI.Panels
 {
     public class EnvironmentPanel : HUDPanel
     {
@@ -16,7 +16,9 @@ namespace ChipOS.Panels
                 $"Mode: {state.Mode}\n" +
                 $"Tracking: {state.Tracking}\n" +
                 $"Input: {state.Input}\n" +
-                $"Network: {state.Network}";
+                $"Network: {state.Network}\n" +
+                $"Battery: {state.BatterySummary}\n" +
+                $"Weather: {state.WeatherSummary}";
         }
     }
 }

@@ -43,8 +43,20 @@ namespace ChipOS.Core
         public string AssistantMessage = "ChipOS online";
         public string Mode = "Desk";
         public string Tracking = "Checking";
-        public string Input = "Basic";
+        public string Input = "Keyboard Mock";
         public string Network = "Unknown";
+        public string BatterySummary = "Unknown";
+        public string WeatherSummary = "Unavailable";
+        public string CurrentTimeText = "--:--:--";
+        public string CurrentDateText = "--- -- ---";
+        public string FocusedPanelId = "chip";
+
+        public int BatteryPercent = -1;
+        public bool BatteryCharging;
+        public bool GazeFollowEnabled;
+        public bool HighContrastEnabled;
+        public float PanelOpacity = 0.8f;
+        public float FontScale = 1f;
 
         public readonly List<TaskItem> Tasks = new()
         {
