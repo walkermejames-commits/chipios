@@ -1,14 +1,11 @@
 using System;
 using ChipOS.Panels;
+using ChipOS.Spatial;
 using TMPro;
 using UnityEngine;
 
 namespace ChipOS.Core
 {
-    /// <summary>
-    /// Global HUD manager for v0.1 Context Layer.
-    /// Coordinates panel rendering, visibility, panic mode, and layout reset.
-    /// </summary>
     public class ChipOSManager : MonoBehaviour
     {
         [Header("Main Chip Panel")]
@@ -20,6 +17,10 @@ namespace ChipOS.Core
         [Header("Feature Panels")]
         [SerializeField] private TaskPanel taskPanel;
         [SerializeField] private EnvironmentPanel environmentPanel;
+        [SerializeField] private ChipOverlayPanel overlayPanel;
+
+        [Header("Spatial")]
+        [SerializeField] private SpatialAnchorManager spatialAnchorManager;
 
         [Header("Status")]
         [SerializeField] private string appStatus = "Status: Running";
@@ -33,58 +34,39 @@ namespace ChipOS.Core
         {
             InitializePanels();
             RenderAll();
+            spatialAnchorManager?.LoadAnchors();
         }
 
-        private void Update()
-        {
-            UpdateClock();
-        }
+        private void Update() => UpdateClock();
 
-        public void ToggleHUD()
-        {
-            _hudVisible = !_hudVisible;
-            SetAllPanelsVisible(_hudVisible);
-        }
+        public void ToggleHUD() { _hudVisible = !_hudVisible; SetAllPanelsVisible(_hudVisible); }
 
-        public void PanicMode()
-        {
-            _hudVisible = false;
-            SetAllPanelsVisible(false);
-        }
+        public void PanicMode() { _hudVisible = false; SetAllPanelsVisible(false); }
 
         public void ResetLayout()
         {
             chipPanel?.ResetLayout();
             taskPanel?.ResetLayout();
             environmentPanel?.ResetLayout();
+            overlayPanel?.ResetLayout();
+            spatialAnchorManager?.ResetAnchors();
         }
 
-        public void CycleTaskStatus()
-        {
-            taskPanel?.CyclePrimaryTaskStatus(_contextState);
-        }
+        public void CycleTaskStatus() => taskPanel?.CyclePrimaryTaskStatus(_contextState);
+        public void SaveLayout() => spatialAnchorManager?.SaveAnchors();
 
         private void InitializePanels()
         {
             chipPanel?.Initialize();
             taskPanel?.Initialize();
             environmentPanel?.Initialize();
+            overlayPanel?.Initialize();
         }
 
         private void SetAllPanelsVisible(bool visible)
         {
-            if (visible)
-            {
-                chipPanel?.Show();
-                taskPanel?.Show();
-                environmentPanel?.Show();
-            }
-            else
-            {
-                chipPanel?.Hide();
-                taskPanel?.Hide();
-                environmentPanel?.Hide();
-            }
+            if (visible) { chipPanel?.Show(); taskPanel?.Show(); environmentPanel?.Show(); overlayPanel?.Show(); }
+            else { chipPanel?.Hide(); taskPanel?.Hide(); environmentPanel?.Hide(); overlayPanel?.Hide(); }
         }
 
         private void RenderAll()
@@ -92,15 +74,15 @@ namespace ChipOS.Core
             UpdateClock();
             if (statusText != null) statusText.text = appStatus;
             if (assistantText != null) assistantText.text = _contextState.AssistantMessage;
-
             taskPanel?.Render(_contextState);
             environmentPanel?.Render(_contextState);
+            overlayPanel?.Render(_contextState);
         }
 
         private void UpdateClock()
         {
-            if (timeText != null)
-                timeText.text = DateTime.Now.ToString("HH:mm:ss");
+            if (timeText != null) timeText.text = DateTime.Now.ToString("HH:mm:ss");
+            overlayPanel?.Render(_contextState);
         }
     }
 }

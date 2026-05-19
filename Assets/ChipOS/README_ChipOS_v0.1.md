@@ -1,81 +1,140 @@
-# ChipOS v0.1 Context Layer (Unity + Android + XREAL Air 2 Ultra)
+# ChipOS v0.1 Spatial Workspace Foundation
 
-## Folder structure
+## Architecture additions
 
-- `Assets/ChipOS/Scripts/Core/ChipOSManager.cs`
-- `Assets/ChipOS/Scripts/Core/ContextState.cs`
-- `Assets/ChipOS/Scripts/Panels/HUDPanel.cs`
-- `Assets/ChipOS/Scripts/Panels/TaskPanel.cs`
-- `Assets/ChipOS/Scripts/Panels/EnvironmentPanel.cs`
-- `Assets/ChipOS/Scripts/Input/InputRouter.cs`
+Existing systems are preserved and extended:
+- `Core`: `ChipOSManager`, `ContextState`
+- `Panels`: `HUDPanel`, `TaskPanel`, `EnvironmentPanel`, `ChipOverlayPanel`
+- `Input`: `InputRouter`
+- `Spatial`: `SpatialAnchorManager`, `FollowBehaviour`, `WorkspaceLayoutManager`, `LayoutEditMode`
+- `Environment`: `EnvironmentScanner` (mock/stub sensor layer)
+- `XR`: abstraction interfaces for head pose, anchors, hand tracking, gesture input
 
-## Scene setup (exact placement)
+## Scene hierarchy (exact setup)
 
-1. Create a scene `Assets/ChipOS/Scenes/ChipOS_Main.unity`.
-2. Add an `XR Rig` or `NRSDK` camera rig (depending on your XREAL stack).
-3. Under the camera (or a world anchor), create an empty `ChipOSRoot` GameObject.
-4. Add `ChipOSManager` and `InputRouter` to `ChipOSRoot`.
-5. Create three world-space canvases as children of `ChipOSRoot`:
-   - `ChipPanel` (main)
-   - `TaskPanel`
-   - `EnvironmentPanel`
-6. Add `HUDPanel` to `ChipPanel`.
-7. Add `TaskPanel` script to `TaskPanel` object.
-8. Add `EnvironmentPanel` script to `EnvironmentPanel` object.
-9. Use TextMeshPro (`TMP_Text`) labels with large font sizes (36-56 recommended for AR readability).
+Create scene: `Assets/ChipOS/Scenes/ChipOS_Main.unity`
 
-## Chip Panel content
+- `XR Rig` (or camera rig root)
+  - `Main Camera`
+- `ChipOSRoot`
+  - `ChipOSManager` (component)
+  - `InputRouter` (component)
+  - `SpatialAnchorManager` (component)
+  - `WorkspaceLayoutManager` (component)
+  - `LayoutEditMode` (component)
+  - `EnvironmentScanner` (component)
+  - `CameraHeadPoseProvider` (component, point to Main Camera transform)
+  - `ChipPanel` (World Space Canvas + `HUDPanel` + optional `FollowBehaviour`)
+  - `TaskPanel` (World Space Canvas + `TaskPanel` + optional `FollowBehaviour`)
+  - `EnvironmentPanel` (World Space Canvas + `EnvironmentPanel` + optional `FollowBehaviour`)
+  - `ChipOverlayPanel` (World Space Canvas + `ChipOverlayPanel` + `FollowBehaviour`)
 
-Add three TMP text fields to ChipPanel and wire in `ChipOSManager`:
-- `timeText`: live clock
-- `statusText`: e.g. "Status: Running"
-- `assistantText`: should show "ChipOS online"
+## TMP wiring
 
-## Task Panel content
+### ChipOSManager
+- `timeText`, `statusText`, `assistantText`
+- `taskPanel`, `environmentPanel`, `overlayPanel`
+- `spatialAnchorManager`
 
-Add one TMP body text field and wire to `TaskPanel.taskBodyText`.
-Expected default tasks:
-- Finish Door in Four driver flow [Now]
-- Test XREAL display mode [Next]
-- Write one AR OS note [Parked]
+### TaskPanel
+- `taskBodyText`
 
-Press `T` to cycle the first task status.
+### EnvironmentPanel
+- `environmentBodyText`
 
-## Environment Panel content
+### ChipOverlayPanel
+- `timeText`
+- `assistantStatusText`
+- `currentTaskText`
+- `notificationsText`
+- `ambientStateText`
+- `canvasGroup`
 
-Add one TMP body text field and wire to `EnvironmentPanel.environmentBodyText`.
-Expected defaults:
-- Mode: Desk
-- Tracking: Checking
-- Input: Basic
-- Network: Unknown
+## Required canvases + object setup
 
-## Input mapping (testing)
+For each panel canvas:
+- Render Mode: `World Space`
+- Add a `CanvasGroup` for fade/opacity
+- Add collider on panel root if you want edit-mode click selection
+- Set unique `HUDPanel.panelId` (e.g. `chip.main`, `chip.tasks`, `chip.environment`, `chip.overlay`)
+- Pick `HUDPanel.zone`: Left/Right/Center/Follow/Desk/Ceiling
 
-- `H` = Toggle all HUD panels
-- `R` = Reset all panel positions
-- `P` = Panic mode (hide everything instantly)
-- `T` = Cycle first task status
+## Spatial features and behavior
 
-## Visual style recommendations
+- Persistent anchors are saved in local `PlayerPrefs` as JSON by `SpatialAnchorManager`
+- Anchor payload stores panel position / rotation / scale, anchor zone, pin state, follow state
+- `SaveAnchors()`, `LoadAnchors()`, `ResetAnchors()` exposed for runtime control
+- `FollowBehaviour` provides soft head-follow with smoothing and max speed clamp
+- Pinning locks panel in physical world; follow can be toggled independently
 
-- Use dark translucent panel backgrounds (e.g. RGBA `#10141ACC`)
-- High contrast text (off-white/cyan accents)
-- Rounded corners and subtle glow
-- Spacing between lines to reduce eye strain in glasses
+## Workspace presets
 
-## XREAL / NRSDK integration notes
+`WorkspaceLayoutManager` supports:
+- Focus Mode
+- Walking Mode
+- Desk Mode
+- Minimal Mode
+- Panic Mode
 
-- Keep `ChipOSRoot` anchored in front of camera for initial stability.
-- Replace keyboard input in `InputRouter` with NRSDK hand/gaze events later.
-- Replace `ContextState` placeholder values with device/services adapters when ready.
+Transitions are eased/animated and active layout is persisted through `SpatialAnchorManager.ActiveLayoutName`.
 
-## First test checklist
+## HUD edit mode
 
-1. Enter Play Mode and confirm all 3 panels are visible.
-2. Confirm Chip Panel clock updates every second.
-3. Press `H`, verify all panels hide/show.
-4. Press `P`, verify instant hide.
-5. Press `R`, verify panel transforms return to defaults.
-6. Press `T`, verify first task cycles Now -> Next -> Parked.
-7. Build Android player with XR/NRSDK pipeline enabled and verify readable panel size on XREAL Air 2 Ultra.
+`LayoutEditMode`:
+- Toggle edit mode: `E`
+- Click panel collider to select
+- Move selected panel: Arrow/WASD axes
+- Rotate selected panel: hold `Q` / `E`
+- Scale selected panel: mouse wheel
+- Optional snap-to-grid
+- Draws cyan gizmo around selected panel
+- Auto-saves anchors during editing
+
+## Keyboard controls
+
+- `H` Toggle HUD visibility
+- `R` Reset panel layouts + anchors
+- `P` Panic mode
+- `T` Cycle primary task
+- `K` Save anchor layout
+- `F1` Focus Mode
+- `F2` Walking Mode
+- `F3` Desk Mode
+- `F4` Minimal Mode
+- `F5` Panic Mode layout
+
+## Prefab structure recommendation
+
+Create reusable prefabs under `Assets/ChipOS/Prefabs/`:
+- `PF_ChipPanel`
+- `PF_TaskPanel`
+- `PF_EnvironmentPanel`
+- `PF_ChipOverlayPanel`
+
+Each prefab should include:
+- World-space canvas root
+- Assigned panel script
+- `HUDPanel` identity + zone
+- Optional `FollowBehaviour`
+- `CanvasGroup`
+- TMP child labels
+
+## XR / NRSDK future expansion points
+
+No direct NRSDK dependency yet. Interfaces are prepared:
+- `IHeadPoseProvider`
+- `ISpatialAnchorProvider`
+- `IHandTrackingProvider`
+- `IGestureInputProvider`
+
+Swap mock/default providers with XREAL/NRSDK adapters later without replacing panel/core architecture.
+
+## Test checklist
+
+1. Press Play and verify all panels initialize and render.
+2. Move panels, press `K`, restart Play, verify anchors restore.
+3. Toggle follow/pin on a panel with `FollowBehaviour` and verify smooth motion.
+4. Press `F1-F5` and verify animated layout transitions.
+5. Enable edit mode (`E`) and verify move/rotate/scale + snap behavior.
+6. Verify overlay pulse alpha and compact/expanded toggling hook.
+7. Verify mock environment values update each frame.

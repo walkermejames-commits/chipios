@@ -1,30 +1,30 @@
 using ChipOS.Core;
+using ChipOS.Spatial;
 using UnityEngine;
 
 namespace ChipOS.Input
 {
-    /// <summary>
-    /// Temporary test input mapping. Later replace with NRSDK hand/gaze/voice adapters.
-    /// </summary>
     public class InputRouter : MonoBehaviour
     {
         [SerializeField] private ChipOSManager chipOSManager;
+        [SerializeField] private WorkspaceLayoutManager workspaceLayoutManager;
 
         private void Update()
         {
             if (chipOSManager == null) return;
 
-            if (UnityEngine.Input.GetKeyDown(KeyCode.H))
-                chipOSManager.ToggleHUD();
+            if (UnityEngine.Input.GetKeyDown(KeyCode.H)) chipOSManager.ToggleHUD();
+            if (UnityEngine.Input.GetKeyDown(KeyCode.R)) chipOSManager.ResetLayout();
+            if (UnityEngine.Input.GetKeyDown(KeyCode.P)) chipOSManager.PanicMode();
+            if (UnityEngine.Input.GetKeyDown(KeyCode.T)) chipOSManager.CycleTaskStatus();
+            if (UnityEngine.Input.GetKeyDown(KeyCode.K)) chipOSManager.SaveLayout();
 
-            if (UnityEngine.Input.GetKeyDown(KeyCode.R))
-                chipOSManager.ResetLayout();
-
-            if (UnityEngine.Input.GetKeyDown(KeyCode.P))
-                chipOSManager.PanicMode();
-
-            if (UnityEngine.Input.GetKeyDown(KeyCode.T))
-                chipOSManager.CycleTaskStatus();
+            if (workspaceLayoutManager == null) return;
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F1)) workspaceLayoutManager.ApplyLayout(WorkspaceLayout.FocusMode);
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F2)) workspaceLayoutManager.ApplyLayout(WorkspaceLayout.WalkingMode);
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F3)) workspaceLayoutManager.ApplyLayout(WorkspaceLayout.DeskMode);
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F4)) workspaceLayoutManager.ApplyLayout(WorkspaceLayout.MinimalMode);
+            if (UnityEngine.Input.GetKeyDown(KeyCode.F5)) workspaceLayoutManager.ApplyLayout(WorkspaceLayout.PanicMode);
         }
     }
 }
